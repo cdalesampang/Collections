@@ -1,0 +1,248 @@
+﻿@{
+    ViewBag.Title = "Report";
+}
+<div class="col-xs-12 form-inline">
+    <select class="form-control" name="monthpicker" id="monthpicker">
+        <option value="1">January</option>
+        <option value="2">February</option>
+        <option value="3">March</option>
+        <option value="4">April</option>
+        <option value="5">May</option>
+        <option value="6">June</option>
+        <option value="7">July</option>
+        <option value="8">August</option>
+        <option value="9">September</option>
+        <option value="10">October</option>
+        <option value="11">November</option>
+        <option value="12">December</option>
+    </select>
+    <select class="form-control" name="yearpicker" id="yearpicker"></select>
+    <button class="btn btn-success" id="btnGetReport">Generate</button>
+    <button class="btn btn-primary" id="btnPrint" style="display:none;" >Print</button>
+</div>
+<div class="col-xs-12" id="radio" style="display:none;">
+    <label class="radio-inline">
+    <input type="radio" name="optradio" value="sales" id="btnDetails">Sales Details
+    </label>
+    <label class="radio-inline">
+        <input type="radio" value="expense" name="optradio" id="btnAll">Expense Details
+    </label>
+    <label class="radio-inline">
+        <input type="radio" value="revenue" name="optradio" id="btnRevenue">Revenue Details
+    </label>
+    <label class="radio-inline">
+        <input type="radio" value="monthend" name="optradio" id="btnMonthEnd">Month End
+    </label>
+</div> 
+<div class="col-xs-12">
+    <div id="container" style="min-width: 310px; height: 400px; margin: 15px auto"></div>
+</div> 
+<div class="col-xs-12 table-responsive" id="report-table">
+
+</div>
+
+<script>
+
+
+
+    Highcharts.wrap(Highcharts.Chart.prototype, 'initReflow', function (proceed) {
+        var chart = this;
+
+        proceed.call(this);
+
+        if (window.matchMedia) {
+            window.matchMedia('print').addListener(function reflow() {
+                chart.reflow();
+            });
+        }
+    });
+
+    $(document).ready(function () {
+        $("#breadcrumb").html('');
+        $("#breadcrumb").append("<li><a href='@Url.Action("Index","Home")'>Home</a></li>");
+        $("#breadcrumb").append("<li><a href='@Url.Action("Index","Collection")'>Collection</a></li>");
+        for (i = new Date().getFullYear() ; i > 1990; i--) {
+            $('#yearpicker').append($('<option />').val(i).html(i));
+        }
+
+        $("#btnPrint").on("click", function () {
+            window.print();
+        })
+
+        $("#btnGetReport").on("click", function () {
+            var a = $("input[name='optradio']:checked").val()
+            if (a == undefined) {
+                $("#btnDetails").click();
+            }
+            var reportType = $("input[name='optradio']:checked").val()
+            var selMonth = $("#monthpicker").val();
+            var selYear = $("#yearpicker").val();
+            var month = $("#monthpicker option:selected").text();
+            $.ajax({
+                url: "@Url.Action("GetCollectionsReport", "Collection")",
+                data: { year: selYear, month: selMonth, reportType: reportType },
+                type: "POST",
+                success: function (data) {
+                    $("#report-table").html("");
+                    $("#container").html("");
+                    $("#btnPrint").hide();
+                    $("#radio").hide();
+                    if (reportType == "monthend") {
+                        $("#radio").show();
+                        $("#btnPrint").show();
+                        $("#container").hide();
+                        var sales = data[0].Value;
+                        var expense = data[1].Value;
+                        var allSales = 0.00;
+                        var allExpense = 0.00;
+                        var html = "<table class='table table-bordered' style='width:500px;margin:0 auto;'><tr><td colspan='2' style=' color:blue;'>Total Sales</td></tr>"
+                        for (var i = 0; i < sales.length; i++) {
+                            html += "<tr><td>" + sales[i].Type + "</td><td align='right'>" + FormatNumberToDecimal(sales[i].Amount) + "</td></tr>"
+                            allSales += sales[i].Amount;
+                        }
+                        html += "<tr><td align='right' style='color:blue;'>Total</td><td align='right';>" + FormatNumberToDecimal(allSales) + "</td></tr>";
+                        html += "<tr><td colspan='2' style='color:red;'>Total Expense</td></tr>";
+                        for (var i = 0; i < expense.length; i++) {
+                            html += "<tr><td>" + expense[i].Type + "</td><td align='right'>" + FormatNumberToDecimal(expense[i].Amount) + "</td></tr>"
+                            allExpense += expense[i].Amount;
+                        }
+                        html += "<tr><td align='right' style='color:red;'>Total</td><td align='right'>" + FormatNumberToDecimal(allExpense) + "</td></tr>";
+                        var income = Number(allSales) - Number(allExpense);
+                        html += "<tr><td style='color:green;'>Total Income</td><td align='right'>" + FormatNumberToDecimal(income) + "</td></tr>";
+                        $("#report-table").append(html);
+                    }
+                    else {
+                        if (data.length > 0) {
+                            $("#radio").show();
+                            $("#btnPrint").show();
+                            $("#container").show();
+                            var dayColumn = [];
+                            var dayInMonth = moment(selYear + "-" + selMonth, "YYYY-MM").daysInMonth();
+                            for (var i = 1; i <= dayInMonth; i++) {
+                                dayColumn.push("Day " + i);
+                            }
+                            var seriesData = [];
+
+                            $.each(data, function (i, val) {
+                                if (true) {
+
+                                }
+                                var seriesEntry = { name: '', data: null };
+                                seriesEntry.name = val.Key;
+                                seriesEntry.data = val.Value;
+                                seriesData.push(seriesEntry);
+                            });
+
+                            var reportDetails = [];
+                            var header = false;
+                            var seriesTotal = [];
+                            for (var b = 0; b <= dayInMonth; b++) {
+
+                                var reportData = Object();
+                                if (!header) {
+                                    reportData["Day"] = "Date";
+                                    $.each(data, function (i, val) {
+                                        reportData["Value" + i] = val.Key;
+                                    });
+                                    reportData["Total"] = "Total";
+                                    reportDetails.push(reportData);
+                                    header = true;
+                                }
+                                else {
+
+                                    var total = 0;
+                                    reportData["Day"] = month + " " + b;
+                                    $.each(data, function (i, val) {
+                                        total += Number(val.Value[b - 1]);
+                                        reportData["Value" + i] = val.Value[b - 1];
+                                    });
+                                    if (reportType !== "revenue") {
+                                        reportData["Total"] = total;
+                                    }
+                                    seriesTotal.push(total);
+                                    reportDetails.push(reportData);
+                                }
+                            }
+                            var seriesAll = [];
+                            var seriesEntry = { name: '', data: null };
+                            seriesEntry.name = "Total";
+                            seriesEntry.data = seriesTotal;
+                            seriesAll.push(seriesEntry);
+                            var html = "<table class='table table-bordered'><thead><tr><th class='text-center'>" + reportDetails[0].Day + "</th>";
+
+                            $.each(data, function (i, val) {
+                                html += "<th class='text-right'>" + reportDetails[0]["Value" + i] + "</th>";
+                            });
+                            if (reportType !== "revenue") {
+                                html += "<th class='text-right'>" + reportDetails[0]["Total"] + "</th>";
+                            }
+                            html += "</tr></thead><tbody>";
+                            for (var c = 1; c <= dayInMonth; c++) {
+                                html += "<tr> <td class='text-center'>" + reportDetails[c]["Day"] + "</td>  ";
+
+                                $.each(data, function (i, val) {
+                                    html += "<td class='text-right'>" + FormatNumberToDecimal(reportDetails[c]["Value" + i]) + "</td>";
+                                });
+                                if (reportType !== "revenue") {
+                                    html += "<td class='text-right'>" + FormatNumberToDecimal(reportDetails[c]["Total"]) + "</td>  ";
+                                }
+                                html += "</tr>";
+                            }
+                            $("#report-table").append(html);
+
+                            var chart = Highcharts.chart('container', {
+                                chart: {
+                                    type: 'column'
+                                },
+                                title: {
+                                    text: 'Daily Collection for the Month of ' + month + " " + selYear
+                                },
+
+                                xAxis: {
+                                    categories: dayColumn,
+                                    crosshair: true
+                                },
+
+                                yAxis: {
+                                    min: 0,
+                                    title: {
+                                        text: 'Amount (php)'
+                                    }
+                                },
+                                tooltip: {
+                                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                                        '<td style="padding:0"><b>{point.y:.2f}</b></td></tr>',
+                                    footerFormat: '</table>',
+                                    shared: true,
+                                    useHTML: true
+                                },
+                                plotOptions: {
+                                    column: {
+                                        pointPadding: 0.2,
+                                        borderWidth: 0
+                                    }
+                                },
+                                series: seriesData
+                            });
+                            $('#btnDetails').on("click", function () {
+                                $("#btnGetReport").click()
+                            });
+                            $('#btnAll').on("click", function () {
+                                $("#btnGetReport").click()
+                            });
+                            $('#btnRevenue').on("click", function () {
+                                $("#btnGetReport").click()
+                            });
+                            $('#btnMonthEnd').on("click", function () {
+                                $("#btnGetReport").click()
+                            });
+                        }
+                    }
+                }
+            });
+        });
+    });
+
+
+</script>

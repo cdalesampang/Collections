@@ -1,0 +1,323 @@
+﻿@model IEnumerable<Collection.Data.Models.Collection>
+@{
+    ViewBag.Title = "Collections";
+}
+    <div class="row">
+        <div class="input-group date datepicker" data-provider="date-picker">
+            <div class="form-group form-inline">
+                <div class='input-group date' id='collectionDate'>
+                    <input type='text' class="form-control" id="colDate"/>
+                    <span class="input-group-addon">
+                        <span class="glyphicon glyphicon-calendar open-datetimepicker"></span>
+                    </span>
+                </div>
+                <input type="text" hidden id="selType"/>
+                <button type="submit" id="btnAdd" class="btn btn-primary">Add Sales</button>
+                <button type="submit" id="btnAddExpense" class="btn btn-danger">Add Expense</button>
+                <a href="@Url.Action("Report","Collection")" class="btn btn-success">Report</a>
+            </div>
+        </div>
+    </div>
+<div class="row table-responsive">
+    @Html.Partial("_Collections", Model)
+</div>
+<div id="div-type">
+    @{Html.RenderAction("_CollectionTypes");}
+</div>
+<div>
+    <div class="modal fade" id="calculator" role="document">
+        <div class="modal-dialog-calc" role="dialog">
+                    <div class="row">
+                        <div class="col-xs-4 rectangle" id="calciBody">
+                            <div class="row">
+                                <div class="col-xs-12 ">
+                                    <input id="screenInput" type="text" class="screenInput" id="screen" name="screens" readOnly></input>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="7">7</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="8">8</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="9">9</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="multiply" class="btn btn-danger inputKey" value="*"><i class="fa fa-times"></i></button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="4">4</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="5">5</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="6">6</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="subtract" class="btn btn-danger inputKey " value="-"> <i class="fa fa-minus"></i></button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="1">1</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="2">2</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value="3">3</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="addition" class="btn btn-danger inputKey " value="+"> <i class="fa fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <button id="equalsTo" class="btn btn-danger inputKey " value="0">0</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button class="btn btn-danger inputKey" value=".">.</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="division" class="btn btn-danger inputKey " value="EQ"><i class="fa fa-pause fa-rotate-90"></i></button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="modulus" class="btn btn-danger inputKey " value="/">/</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-xs-3">
+                                    <button id="reset" class="btn btn-danger inputKey" value="C">C</button>
+                                </div>
+                                <div class="col-xs-3">
+                                    <button id="backspace" class="btn btn-danger inputKey" value="CE">CE</button>
+                                </div>
+                                <div class="col-xs-offset-3 col-xs-3">
+                                    <button id="saveCalc" class="btn btn-danger">Save</button>
+                                </div>
+                            </div>
+                        </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script type="text/javascript">
+   var operators = ['+', '-', '/', '*', '%'];
+   var nonfunctional = ['C', 'CE'];
+   function BindSelectEvent() {
+       $("#select-type td.type").on("click", function () {
+           $("#select-type tr").find("td.selected").removeClass("selected")
+           $(this).addClass("selected");
+           $('#screenInput').val("");
+           $("#modal-types").modal("hide");
+           $("#modal-expense").modal("hide");
+           $("#calculator").modal("show");
+       });
+       $("#select-type td.delete").on("click", function () {
+           $("#select-type tr").find("td.selected").removeClass("selected");
+           var selType = $("#selType").val();
+           var typeId = Number($(this).attr("data-id"));
+           $.ajax({
+               url: '@Url.Action("DeleteType", "Collection")',
+               type: 'POST',
+               data: { id: typeId },
+               success: function (data) {
+                   $("#div-type").html(data);
+                   BindSelectEvent();
+                   if (selType == "true") {
+                       $("#modal-types").modal("show");
+                   }
+                   else {
+                       $("#modal-expense").modal("show");
+                   }
+                  
+               }
+           });
+       });
+       $("#btnAddType").on("click", function () {
+           $("#modal-expense").modal("hide");
+           $("#modal-add-type").modal("show");
+       });
+       $("#btnAddTypeExpense").on("click", function () {
+           $("#modal-types").modal("hide");
+           $("#modal-add-expense-type").modal("show");
+       });
+       $("#btnCancelType").on("click", function () {
+           $("#modal-add-type").modal("hide");
+           $("#modal-expense").modal("show");
+       });
+       $("#btnCancelExpenseType").on("click", function () {
+           $("#modal-add-expense-type").modal("hide");
+           $("#modal-types").modal("show");
+       });
+
+       $("#btnSaveType").on("click", function () {
+           var collectionType = $("#collectionType").val();
+           var selType = $("#selType").val();
+           $.ajax({
+               url: "@Url.Action("AddType","Collection")",
+               type: "POST",
+               data: { "collectionType": collectionType, "selType": selType },
+               success: function (data) {
+                   $("#div-type").html(data);
+                   if (selType == "true") {
+                       $("#modal-types").modal("show");
+                   }
+                   else {
+                       $("#modal-expense").modal("show");
+                   }
+              
+               BindSelectEvent();
+           }
+           });
+       });
+       $("#btnSaveExpenseType").on("click", function () {
+           var collectionType = $("#collectionExpenseType").val();
+           var selType = $("#selType").val();
+           $.ajax({
+               url: "@Url.Action("AddType","Collection")",
+               type: "POST",
+           data: { "collectionType": collectionType, "selType": selType },
+           success: function (data) {
+               $("#div-type").html(data);
+               if (selType == "true") {
+                   $("#modal-types").modal("show");
+               }
+               else {
+                   $("#modal-expense").modal("show");
+               }
+              
+               BindSelectEvent();
+           }
+       });
+   });
+   }
+   $(document).ready(function () {
+       BindSelectEvent();
+        $('#collectionDate').datetimepicker({
+            format: 'MMM-DD-YYYY',
+            allowInputToggle: true,
+            defaultDate: new Date()
+        }).on("dp.change", function (e) {
+            getData();
+        });
+        getData();
+       function getData() {
+           var colDate = $("#colDate").val();
+           $(".form-group.form-inline").children().remove("div.red");
+           $.ajax({
+               url: '@Url.Action("GetCollections", "Collection")',
+               type: 'POST',
+               data: { "colDate": colDate },
+               success: function (data) {
+                   $(".table-responsive").html(data);
+               }
+           });
+       }
+
+
+        $("#btnAdd").on("click", function (ev) {
+            var selectedDate = $("#collectionDate input").val();
+            $('#selType').val(true);
+            if (selectedDate == "") {
+                if ($(".form-group.form-inline").children("div.red").length == 0)
+                    $(".form-group.form-inline").append("<div class='red'>Please Select Date</div>");
+                ev.preventDefault();
+            }
+            else {
+                $('#select-type option[value="-1"]').prop("selected", "selected");
+                $("#modal-types").modal("show");
+            }
+        });
+
+
+        $("#btnAddExpense").on("click", function (ev) {
+            var selectedDate = $("#collectionDate input").val();
+            $('#selType').val(false);
+            if (selectedDate == "") {
+                if ($(".form-group.form-inline").children("div.red").length == 0)
+                    $(".form-group.form-inline").append("<div class='red'>Please Select Date</div>");
+
+                ev.preventDefault();
+            }
+            else {
+                $('#select-type option[value="-1"]').prop("selected", "selected");
+                $("#modal-expense").modal("show");
+            }
+        });
+
+        $("#collectionDate input").on("keydown", function (ev) {
+            ev.preventDefault();
+        });
+
+
+        $('.inputKey').click(function () {
+            calcLogic(this.value);
+        });
+
+
+        $("#saveCalc").on("click", function () {
+            var amount = $(screenInput).val();
+            var type = $("#select-type tr").find("td.selected").attr("data-id");
+            var colDate = $("#colDate").val();
+            $.ajax({
+                url: "@Url.Action("AddCollection","Collection")",
+                type: "POST",
+                data: { "collectionType": type, "amount": amount, "colDate": colDate },
+                success: function (data) {
+                    $("#calculator").modal("hide");
+                    $(".table-responsive").html(data);
+                }
+            });
+        });
+
+        $("#btnDelete").on("click", function () {
+            var colDate = $("#colDate").val();
+            var id = $("#btnDelete").attr("data-id");
+            $.ajax({
+                url: "@Url.Action("Delete","Collection")",
+                type: "POST",
+                data: {"collectionId": id,"colDate":colDate},
+                success: function (data) {
+                    $(".table-responsive").html(data);
+                }
+            });
+        });
+
+        function backspace() {
+            var temp = $('#screenInput').val();
+            $('#screenInput').val(temp.substring(0, temp.length - 1));
+        }
+        function calcLogic(pressedButtonVal) {
+            var currScrValue = $('#screenInput').val();
+            var isNotAnOperator = $.inArray(pressedButtonVal, operators);
+            var isNotNonFunctional = $.inArray(pressedButtonVal, nonfunctional);
+
+            var isPreviousKeyAOperator = $.inArray(currScrValue.substr(currScrValue.length - 1), operators);
+            if (isNotAnOperator >= 0 && isPreviousKeyAOperator >= 0) {
+                return;
+            }
+            if (currScrValue === '' && isNotAnOperator < 0 && isNotNonFunctional < 0) {
+                $('#screenInput').val(currScrValue + pressedButtonVal);
+            } else if ('CE' === pressedButtonVal) {
+                backspace();
+            } else if ('C' === pressedButtonVal) {
+                $('#screenInput').val('');
+            } else if ('EQ' === pressedButtonVal) {
+                $('#screenInput').val(math.eval($('#screenInput').val()));
+            } else if (isNotNonFunctional < 0) {
+                $('#screenInput').val(currScrValue + pressedButtonVal);
+            }
+        }
+
+    });
+
+</script>

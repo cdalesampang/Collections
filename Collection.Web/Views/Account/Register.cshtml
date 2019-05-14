@@ -1,0 +1,160 @@
+﻿@model Collection.Data.Models.User
+
+@{
+    ViewBag.Title = "Register";
+}
+
+@using (Html.BeginForm("Register","Account",FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <div class="row main">
+        <div class="main-center">
+            <div class="form-group">
+                <div class="margin-bot">
+                    <h2>Register Account.</h2>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group margin-bot">
+                    <span class="input-group-addon"><i class="fa fa-user fa" aria-hidden="true"></i></span>
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder= "Enter your Full Name" })
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group margin-bot">
+                    <span class="input-group-addon"><i class="fa fa-envelope fa" aria-hidden="true"></i></span>
+                    @Html.TextBoxFor(m => m.Email, new { @class="form-control", placeholder="Enter your Email"})
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group margin-bot">
+                    <span class="input-group-addon"><i class="fa fa-user fa" aria-hidden="true"></i></span>
+                    @Html.TextBoxFor(m => m.UserName, new { @class = "form-control", placeholder = "Enter your UserName" })
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group margin-bot">
+                    <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
+                    @Html.PasswordFor(m => m.Password, new { @class="form-control", placeholder="Enter your Password"})
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group margin-bot">
+                    <span class="input-group-addon"><i class="fa fa-lock fa-lg" aria-hidden="true"></i></span>
+                    @Html.Password("Password1",null,new { @class="form-control", placeholder="Confirm your Password"})
+                    @*<input type="password" class="form-control" name="password1" id="password1" placeholder="Confirm your Password" />*@
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-main btn-block btn-lg">Register</button>
+            </div>
+        </div>
+    </div>
+}
+<script>
+    $(document).ready(function () {
+        $("form").on("submit", function (e) {
+            $("input:text").each(function (ev) {
+                txtFieldError($(this))
+
+                if ($(this).parents("div.form-group").hasClass("has-error"))
+                    e.preventDefault();
+            });
+            $("input:password").each(function (ev) {
+                txtFieldError($(this))
+
+                if ($(this).parents("div.form-group").hasClass("has-error"))
+                    e.preventDefault();
+            });
+        });
+
+        function txtFieldError(e) {
+            var currTarget = $(e).attr('name');
+            if (e.val() == '' && !e.parents("div.form-group").hasClass("has-error")) {
+                $("div.input-group > input[name=" + currTarget + ']').parents("div.form-group").append("<span class='red'> You can't leave this empty.</span>");
+                e.parents("div.form-group").addClass("has-error").removeClass("has-success");
+            }
+        }
+
+        function txtFieldSuccess(e) {
+            if (e.val() != '') {
+                e.parents('div.form-group').removeClass("has-error").addClass("has-success");
+                e.parents("div.form-group").children("span.red").remove();
+            }
+        }
+
+        $("#Email").blur(function () {
+            var email = $("#Email").val();
+
+            $.ajax({
+                url: '@Url.Action("CheckEmail", "Account")',
+                type: 'POST',
+                data: { "email": email },
+                global: false,
+                success: function (data) {
+                    if (data == "True") {
+                        var currTarget = $("#Email").attr('name');
+                        $("#Email").parents("div.form-group").children("span.red").remove();
+                        $("div.input-group > input[name=" + currTarget + ']').parents("div.form-group").append("<span class='red'> Email already in use.</span>");
+                        $("#Email").parents("div.form-group").addClass("has-error").removeClass("has-success");
+                    }
+                    else {
+                        $("#Email").parents('div.form-group').removeClass("has-error").addClass("has-success");
+                        $("#Email").parents("div.form-group").children("span.red").remove();
+                    }
+                }
+            });
+        });
+        $("#UserName").blur(function () {
+            var userName = $("#UserName").val();
+
+            $.ajax({
+                url: '@Url.Action("CheckUserName", "Account")',
+                type: 'POST',
+                data: { "userName": userName },
+                global: false,
+                success: function (data) {
+                    if (data == "True") {
+                        var currTarget = $("#UserName").attr('name');
+                        $("#UserName").parents("div.form-group").children("span.red").remove();
+                        $("div.input-group > input[name=" + currTarget + ']').parents("div.form-group").append("<span class='red'> UserName already in use.</span>");
+                        $("#UserName").parents("div.form-group").addClass("has-error").removeClass("has-success");
+                    }
+                    else {
+                        $("#UserName").parents('div.form-group').removeClass("has-error").addClass("has-success");
+                        $("#UserName").parents("div.form-group").children("span.red").remove();
+                    }
+                }
+            });
+        });
+
+        $("input:text").blur(function () {
+            txtFieldError($(this));
+        })
+       .change(function () {
+           txtFieldSuccess($(this));
+       });
+
+        $("input:password").keyup(function (e) {
+            var currTarget = $(this).attr('name');
+            if ($(this).val().length <= 6 && currTarget.toString() == "Password") {
+                $(this).parents("div.form-group").children("span.red").remove();
+                $("div.input-group > input[name=" + currTarget + ']').parents("div.form-group").append("<span class='red'> Password must be 7 or more characters.</span>");
+                $(this).parents("div.form-group").addClass("has-error").removeClass("has-success");
+            }
+            else if (currTarget.toString() == "Password1" && $('#Password').val() != $(this).val()) {
+                $(this).parents("div.form-group").children("span.red").remove();
+                $("div.input-group > input[name='Password1']").parents("div.form-group").append("<span class='red'> Password doesnt match.</span>");
+                $(this).parents("div.form-group").addClass("has-error").removeClass("has-success");
+            }
+            else {
+                $(this).parents("div.form-group").children("span.red").remove();
+                $(this).parents("div.form-group").removeClass("has-error").addClass("has-success");
+            }
+        })
+       .blur(function () {
+           txtFieldError($(this));
+       });
+
+    });
+</script>

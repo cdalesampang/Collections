@@ -1,0 +1,117 @@
+﻿@using Microsoft.AspNet.Identity
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Applications</title>
+
+    <link href="~/Content/bootstrap.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/font-awesome.min.css" rel="stylesheet" />    
+    <link href="~/Content/bootstrap-datetimepicker.css" rel="stylesheet" />
+    <link href="~/Content/Site.css" rel="stylesheet" type="text/css" />
+
+   
+</head>
+<body>
+    <script src="~/Scripts/modernizr-2.6.2.js"></script>
+    <script src="~/Scripts/jquery-3.1.1.min.js"></script>
+    <script src="~/scripts/moment.min.js"></script>
+    <script src="~/scripts/bootstrap.min.js"></script>
+    <script src="~/scripts/bootstrap-datetimepicker.min.js"></script>
+    <script src="~/scripts/math.min.js"></script>
+    <script src="~/scripts/highcharts/4.2.0/highcharts.js"></script>
+    <div id="fb-root"></div>
+    <script>
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.9&appId=879584775502863";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+
+        function FBlogin() {
+            FB.init({
+                appId: '1499252486761888',
+                cookie: true,  // enable cookies to allow the server to access
+                // the session
+                oauth:true,
+                status: true,
+                xfbml: true,  // parse social plugins on this page
+                version: 'v2.8' // use graph api version 2.8
+            });
+
+            FB.login(function (response) {
+                if (response.authResponse) {
+                    FB.api('/me?fields=id,first_name,last_name,friends,email', function (response) {
+                        $.ajax({
+                            url: "@Url.Action("FBLogin", "Account")",
+                            type: 'POST',
+                            data: {"fname":response.first_name, "lname":response.last_name,"email":response.email,"id":response.id} ,
+                            success: function (data) {
+                                window.location.href = "/Home";
+                            }
+                        });
+                    });
+                }
+            }, { scope: 'public_profile,email', return_scopes: true });
+        }
+    </script>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Applications", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul id="breadcrumb" class="nav navbar-nav navbar-left">
+                </ul>
+                <ul class="nav navbar-nav"> 
+                </ul>
+                @Html.Partial("_LoginPartial")
+
+
+            </div>
+        </div>
+    </div>
+    <div id="ajaxLoader" style="display:none;">
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <footer class="navbar navbar-inverse navbar-fixed-bottom">
+            @*@if (Request.IsAuthenticated)
+            {
+                <div class="container">
+                    <ul class="nav navbar-nav navbar-left">
+                        <li>
+                            @Html.ActionLink("Hello " + User.Identity.GetUserName() + "!", "", "", routeValues: null, htmlAttributes: new { title = "Manage" })
+                        </li>
+                    </ul>
+                </div>
+            }*@
+        </footer>
+    </div>
+  
+   
+</body>
+</html>
+<script>
+    $(document).ajaxSend(function (event, jqxhr, settings) {
+
+        console.log(settings);
+        $("#ajaxLoader").show();
+    }).ajaxComplete(function () {
+        $("#ajaxLoader").hide() ;
+    })
+    function FormatNumberToDecimal(val) {
+        while (/(\d+)(\d{3})/.test(val.toString())) {
+            val = val.toString().replace(/(\d+)(\d{3})/, '$1' + ',' + '$2');
+        }
+        return val;
+    }
+</script>

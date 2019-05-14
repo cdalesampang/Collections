@@ -1,0 +1,80 @@
+﻿@model IEnumerable<Collection.Data.Models.Collection>
+<div class="col-sm-6">
+    <p>Sales</p>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th colspan="2">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null)
+            {
+                foreach (var item in Model)
+                {
+                    if (item.CollectionType.Sales == true)
+                    {
+                        <tr>
+                            <td>@(item.CollectionType == null ? String.Empty : @item.CollectionType.Type)</td>
+                            <td>@String.Format("{0:n2}", @item.Amount)</td>
+
+                            <td>
+                                <button title="Delete Collection" data-id="@item.CollectionId" class="btn-delete"><i class="fa fa-trash fa-lg red" aria-hidden="true"></i></button>
+                            </td>
+                        </tr>
+                    }
+                }
+            }
+        </tbody>
+    </table>
+</div>
+<div class="col-sm-6">
+    <p>Expense</p>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th colspan="2">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null)
+            {
+                foreach (var item in Model)
+                {
+                    if (item.CollectionType.Sales == false)
+                    {
+                        <tr>
+                            <td>@(item.CollectionType == null ? String.Empty : @item.CollectionType.Type)</td>
+                            <td>@String.Format("{0:n2}", @item.Amount)</td>
+
+                            <td>
+                                <button title="Delete Collection" data-id="@item.CollectionId" class="btn-delete"><i class="fa fa-trash fa-lg red" aria-hidden="true"></i></button>
+                            </td>
+                        </tr>
+                    }
+
+                }
+            }
+        </tbody>
+    </table>
+</div>
+<script>
+    $(document).ready(function () {
+        $("#breadcrumb").html('');
+        $("#breadcrumb").append("<li><a href='@Url.Action("Index","Home")'>Home</a></li>");
+        $(".btn-delete").on("click", function () {
+            var deleteId = $(this).attr("data-id");
+            var colDate = $("#colDate").val();
+            $.ajax({
+                url: "@Url.Action("Delete","Collection")",
+                type: "POST",
+                data: { "collectionId": deleteId, "colDate": colDate },
+                success: function (data) {
+                    $(".table-responsive").html(data);
+                }
+            });
+        });
+    });
+</script>
